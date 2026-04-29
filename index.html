@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>保險年齡計算器 - 富邦配色版</title>
+  <title>保險計算機</title>
   <style>
     :root {
       --fubon-blue: #0088cb;
       --fubon-green: #00b085;
-      --fubon-dark-blue: #006699;
+      --fubon-dark: #006699;
       --bg: #f5f9fc;
       --surface: #ffffff;
       --text: #1a1a1a;
@@ -16,248 +16,278 @@
       --line: #d1e1ea;
       --radius: 16px;
       --shadow: 0 10px 30px rgba(0, 136, 203, 0.08);
-      --danger: #ef4444;
+      --danger: #c82121;
     }
 
-    * { box-sizing: border-box; font-family: "PingFang TC", "Heiti TC", "Microsoft JhengHei", sans-serif; }
-    body { background: var(--bg); color: var(--text); margin: 0; padding: 20px; -webkit-font-smoothing: antialiased; }
-    main { max-width: 600px; margin: 0 auto; }
+    * { box-sizing: border-box; font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; }
+    body { background: var(--bg); color: var(--text); margin: 0; padding-top: 70px; -webkit-font-smoothing: antialiased; }
     
+    nav { 
+      position: fixed; top: 0; width: 100%; background: var(--surface); 
+      display: flex; justify-content: center; gap: 10px; padding: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05); z-index: 100;
+    }
+    nav button {
+      border: none; background: none; padding: 8px 16px; border-radius: 20px;
+      font-weight: bold; color: var(--muted); cursor: pointer; transition: 0.3s;
+    }
+    nav button.active { background: var(--fubon-blue); color: #fff; }
+
+    main { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .page-section { display: none; animation: fadeIn 0.4s ease; }
+    .page-section.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
     header { text-align: center; margin-bottom: 25px; }
-    h1 { font-size: 1.8rem; margin: 8px 0; color: var(--fubon-dark-blue); font-weight: 900; }
-    .eyebrow { font-size: 0.75rem; color: var(--fubon-green); font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; }
+    h1 { font-size: 1.6rem; color: var(--fubon-dark); margin: 0; }
 
     .card { background: var(--surface); padding: 20px; border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid rgba(209,225,234, 0.5); margin-bottom: 15px; }
-    label { display: block; font-weight: 700; margin-bottom: 8px; font-size: 0.95rem; color: var(--text); }
-    .help-text { font-size: 0.8rem; color: var(--muted); margin-bottom: 12px; }
-
-    /* 輸入框組樣式 */
-    .date-input-group {
-      display: flex; align-items: center; gap: 8px;
-      border: 2px solid var(--line); border-radius: 12px; padding: 4px 15px;
-      transition: all 0.2s;
-    }
-    .date-input-group:focus-within { border-color: var(--fubon-blue); box-shadow: 0 0 0 4px rgba(0, 136, 203, 0.1); }
+    label { display: block; font-weight: 700; margin-bottom: 8px; font-size: 0.95rem; }
     
-    input[type="tel"] {
-      border: none; outline: none; font-size: 1.2rem; padding: 10px 0; text-align: center;
-      background: transparent; color: var(--text);
-    }
-    #dobY, #rocY { width: 65px; font-weight: bold; }
-    #dobM, #dobD, #rocM, #rocD { width: 45px; font-weight: bold; }
+    .input-row { display: flex; align-items: center; gap: 8px; border: 2px solid var(--line); border-radius: 12px; padding: 4px 15px; margin-bottom: 15px; }
+    .input-row:focus-within { border-color: var(--fubon-blue); }
+    input { border: none; outline: none; font-size: 1.1rem; padding: 10px 0; background: transparent; width: 100%; font-weight: bold; }
     .sep { color: var(--line); font-weight: bold; }
-
-    /* 參數調整樣式 */
-    input[type="date"], .custom-select {
-      width: 100%; border: 2px solid var(--line); border-radius: 12px; 
-      padding: 12px 15px; font-size: 1rem; color: var(--text); font-weight: bold;
-      background: #fff;
-    }
-    .slider-row { display: flex; align-items: center; gap: 15px; margin-top: 5px; }
-    input[type="range"] { flex-grow: 1; accent-color: var(--fubon-blue); }
-    .param-val { font-weight: 900; color: var(--fubon-blue); font-size: 1.2rem; min-width: 45px; text-align: right; }
-
-    /* 結果區樣式 */
-    .res-card.main { 
-      background: linear-gradient(135deg, var(--fubon-blue), var(--fubon-green)); 
-      color: #ffffff; padding: 25px; text-align: center;
-    }
-    .res-card.main.over-limit { background: linear-gradient(135deg, var(--danger), #ff6b6b); }
-    .res-val-lg { font-size: 4.5rem; font-weight: 900; line-height: 1; margin: 10px 0; display: block; }
-    .unit-lg { font-size: 1.2rem; margin-left: 5px; }
-
-    /* 2x2 結果矩陣 */
+    
+    .res-card { background: linear-gradient(135deg, var(--fubon-blue), var(--fubon-green)); color: #fff; text-align: center; padding: 20px; border-radius: var(--radius); }
+    .res-card.alert { background: linear-gradient(135deg, var(--danger), #ff6b6b); }
+    .res-val-lg { font-size: 3.5rem; font-weight: 900; display: block; line-height: 1; }
     .sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
-    .sub-box { padding: 12px; border-radius: 12px; background: #fff; text-align: center; border: 1px solid var(--line); box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
-    .sub-box.highlight { border-color: var(--fubon-green); background: #f0fffb; }
-    .sub-val { font-size: 1.6rem; font-weight: bold; color: var(--text); display: block; }
-    .sub-label { font-size: 0.7rem; color: var(--muted); font-weight: bold; text-transform: uppercase; margin-top: 4px; }
+    .sub-box { padding: 15px; border-radius: 12px; background: #f8fafc; border: 1px solid var(--line); text-align: center; }
+    .sub-box.danger { border-color: var(--danger); color: var(--danger); }
+    .sub-val { font-size: 1.4rem; font-weight: bold; display: block; }
+    .sub-label { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
 
-    .detail-text { text-align: center; margin-top: 15px; font-size: 0.85rem; color: var(--muted); }
-    .error { color: var(--danger); font-size: 0.85rem; font-weight: bold; margin-top: 10px; text-align: center; min-height: 1.2rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th { text-align: left; font-size: 0.8rem; color: var(--muted); padding-bottom: 8px; }
+    td { padding: 12px 0; border-top: 1px solid var(--line); }
+    .price { font-weight: bold; color: var(--fubon-dark); font-size: 1.1rem; }
+    .total-hint { font-size: 0.75rem; color: var(--muted); }
 
+    input[type="range"] { width: 100%; accent-color: var(--fubon-blue); }
+    .detail-text { text-align: center; margin-top: 20px; font-size: 0.95rem; color: var(--fubon-dark); font-weight: bold; }
   </style>
 </head>
 <body>
 
+<nav>
+  <button onclick="showPage('age')" id="btn-age" class="active">年齡計算</button>
+  <button onclick="showPage('weight')" id="btn-weight">體重檢查</button>
+  <button onclick="showPage('premium')" id="btn-premium">保費換算</button>
+</nav>
+
 <main>
-  <header>
-    <p class="eyebrow">Fubon+ Style Tool</p>
-    <h1>保險年齡計算器</h1>
-  </header>
+  <section id="page-age" class="page-section active">
+    <header><h1>保險年齡計算</h1></header>
+    <div class="card">
+      <label>民國生日</label>
+      <div class="input-row">
+        <input type="tel" id="rocY" placeholder="YYY" maxlength="3"> <span class="sep">/</span>
+        <input type="tel" id="rocM" placeholder="MM" maxlength="2" oninput="limitValue(this, 12)"> <span class="sep">/</span>
+        <input type="tel" id="rocD" placeholder="DD" maxlength="2" oninput="limitValue(this, 31)">
+      </div>
 
-  <div class="card">
-    <label>民國生日</label>
-    <div class="date-input-group">
-      <input type="tel" id="rocY" placeholder="YYY" maxlength="3">
-      <span class="sep">/</span>
-      <input type="tel" id="rocM" placeholder="MM" maxlength="2">
-      <span class="sep">/</span>
-      <input type="tel" id="rocD" placeholder="DD" maxlength="2">
-    </div>
+      <div style="text-align: center; color:var(--line); font-weight:bold; margin:10px 0; font-size:0.8rem;">或</div>
+      
+      <label>西元生日</label>
+      <div class="input-row">
+        <input type="tel" id="dobY" placeholder="YYYY" maxlength="4"><span class="sep">/</span>
+        <input type="tel" id="dobM" placeholder="MM" maxlength="2" oninput="limitValue(this, 12)"><span class="sep">/</span>
+        <input type="tel" id="dobD" placeholder="DD" maxlength="2" oninput="limitValue(this, 31)">
+      </div>
 
-    <div style="text-align: center; color:var(--line); font-weight:bold; margin:10px 0; font-size:0.8rem;">或</div>
-
-    <label>西元生日</label>
-    <div class="date-input-group">
-      <input type="tel" id="dobY" placeholder="YYYY" maxlength="4">
-      <span class="sep">/</span>
-      <input type="tel" id="dobM" placeholder="MM" maxlength="2">
-      <span class="sep">/</span>
-      <input type="tel" id="dobD" placeholder="DD" maxlength="2">
-    </div>
-  </div>
-
-  <div class="card">
-    <label>投保基準日</label>
-    <input type="date" id="baseDate">
-    
-    <label style="margin-top:20px;">自訂進位規則 (滿幾個月加1歲)</label>
-    <div class="slider-row">
+      <label>投保基準日</label>
+      <input type="date" id="baseDate" style="border: 2px solid var(--line); border-radius: 12px; padding: 10px; width:100%;">
+      <label style="margin-top:15px;">自訂進位 (滿幾個月加1歲): <span id="paramDisp" style="color:var(--fubon-blue)">6</span>月</label>
       <input type="range" id="paramSlider" min="1" max="11" value="6">
-      <span class="param-val"><span id="paramDisp">6</span>月</span>
     </div>
-    <div id="error" class="error"></div>
-  </div>
-
-  <div class="results-section">
-    <div class="card res-card main" id="mainResCard">
-      <div style="font-size: 0.8rem; font-weight: bold; opacity: 0.9;">保險年齡 (標準6個月法則)</div>
-      <span class="res-val-lg" id="insAge">--<span class="unit-lg">歲</span></span>
+    <div class="res-card" id="ageMainCard">
+      <span class="sub-label" style="color:rgba(255,255,255,0.8)">保險年齡</span>
+      <span class="res-val-lg" id="insAge">--</span>
     </div>
-
     <div class="sub-grid">
-      <div class="sub-box">
-        <span class="sub-val" id="actAge">--</span>
-        <span class="sub-label">實際足歲</span>
-      </div>
-      <div class="sub-box highlight">
-        <span class="sub-val" id="customAge">--</span>
-        <span class="sub-label">自訂規則年齡</span>
-      </div>
-      <div class="sub-box">
-        <span class="sub-val" id="remMonth">--</span>
-        <span class="sub-label">現在月數</span>
-      </div>
-      <div class="sub-box">
-        <span class="sub-val" id="remDay">--</span>
-        <span class="sub-label">現在天數</span>
-      </div>
+      <div class="sub-box"><span class="sub-val" id="actAge">--</span><span class="sub-label">實際足歲</span></div>
+      <div class="sub-box"><span class="sub-val" id="customAge">--</span><span class="sub-label">自訂規則</span></div>
     </div>
     <div class="detail-text" id="detailText">請輸入完整日期進行試算</div>
-  </div>
+  </section>
+
+  <section id="page-weight" class="page-section">
+    <header><h1>保險體重檢查</h1></header>
+    <div class="card">
+      <label>身高 (cm)</label>
+      <div class="input-row"><input type="tel" id="height" placeholder="請輸入身高"></div>
+      <label>目前體重 (kg) <span style="font-weight:normal; color:var(--muted)">(選填)</span></label>
+      <div class="input-row"><input type="tel" id="weight" placeholder="請輸入體重"></div>
+    </div>
+    <div class="sub-grid" style="grid-template-columns: 1fr;">
+      <div class="sub-box" id="weightResBox">
+        <span class="sub-label">您的體重範圍</span>
+        <span class="sub-val" id="weightRange">請輸入身高</span>
+      </div>
+    </div>
+    <div class="sub-grid">
+      <div class="sub-box"><span class="sub-val" id="wLower">--</span><span class="sub-label">標準下限 (0.75)</span></div>
+      <div class="sub-box"><span class="sub-val" id="wUpper">--</span><span class="sub-label">標準上限 (1.25)</span></div>
+    </div>
+  </section>
+
+  <section id="page-premium" class="page-section">
+    <header><h1>保費繳別換算</h1></header>
+    <div class="card">
+      <label>輸入年繳保費 (或試算金額)</label>
+      <div class="input-row"><input type="tel" id="preInp" placeholder="例如: 30000"></div>
+    </div>
+    <div class="card">
+      <table>
+        <thead><tr><th>繳別 (係數)</th><th>每期金額</th><th>全年總額</th></tr></thead>
+        <tbody>
+          <tr><td>年繳 (1.00)</td><td><span class="price" id="p1">--</span></td><td class="total-hint" id="t1">--</td></tr>
+          <tr><td>半年 (0.52)</td><td><span class="price" id="p2">--</span></td><td class="total-hint" id="t2">--</td></tr>
+          <tr><td>季繳 (0.262)</td><td><span class="price" id="p3">--</span></td><td class="total-hint" id="t3">--</td></tr>
+          <tr><td>月繳 (0.088)</td><td><span class="price" id="p4">--</span></td><td class="total-hint" id="t4">--</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:0.7rem; color:var(--muted); margin-top:15px;">註：半年繳=年*0.52 (總1.04), 季繳=年*0.262 (總1.048), 月繳=年*0.088 (總1.056)</p>
+    </div>
+  </section>
 </main>
 
 <script>
-  const rocInputs = { Y: document.getElementById('rocY'), M: document.getElementById('rocM'), D: document.getElementById('rocD') };
-  const dobInputs = { Y: document.getElementById('dobY'), M: document.getElementById('dobM'), D: document.getElementById('dobD') };
-  const baseDateInp = document.getElementById('baseDate');
-  const paramSlider = document.getElementById('paramSlider');
-  const paramDisp = document.getElementById('paramDisp');
-  const errorEl = document.getElementById('error');
-  const mainResCard = document.getElementById('mainResCard');
+  function showPage(id) {
+    document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById('page-' + id).classList.add('active');
+    document.getElementById('btn-' + id).classList.add('active');
+  }
 
-  // 初始化今天日期
+  function limitValue(el, max) {
+    if (parseInt(el.value) > max) el.value = max;
+    if (parseInt(el.value) < 0) el.value = 1;
+  }
+
+  // --- 年齡邏輯 ---
+  const rocY = document.getElementById('rocY'), rocM = document.getElementById('rocM'), rocD = document.getElementById('rocD');
+  const dobY = document.getElementById('dobY'), dobM = document.getElementById('dobM'), dobD = document.getElementById('dobD');
+  const baseDateInp = document.getElementById('baseDate'), slider = document.getElementById('paramSlider');
+  const detailText = document.getElementById('detailText');
+  
   baseDateInp.value = new Date().toISOString().split('T')[0];
 
-  // 雙向同步邏輯
-  function syncRocToDob() {
-    const y = parseInt(rocInputs.Y.value);
-    if (!y) { dobInputs.Y.value = ''; return; }
-    dobInputs.Y.value = y + 1911;
-    dobInputs.M.value = rocInputs.M.value;
-    dobInputs.D.value = rocInputs.D.value;
-  }
+  function calcAge() {
+    // 優先讀取民國，若無則讀取西元
+    let y = parseInt(rocY.value) ? parseInt(rocY.value) + 1911 : parseInt(dobY.value);
+    let m = parseInt(rocM.value) || parseInt(dobM.value);
+    let d = parseInt(rocD.value) || parseInt(dobD.value);
 
-  function syncDobToRoc() {
-    const y = parseInt(dobInputs.Y.value);
-    if (!y || y < 1912) { rocInputs.Y.value = ''; return; }
-    rocInputs.Y.value = y - 1911;
-    rocInputs.M.value = dobInputs.M.value;
-    rocInputs.D.value = dobInputs.D.value;
-  }
-
-  function setupBehavior(inputs, syncFn) {
-    const arr = [inputs.Y, inputs.M, inputs.D];
-    arr.forEach((el, i) => {
-      el.addEventListener('input', () => {
-        el.value = el.value.replace(/\D/g, '');
-        syncFn();
-        if (el.value.length >= el.maxLength && arr[i+1]) arr[i+1].focus();
-        calculate();
-      });
-      el.addEventListener('keydown', (e) => {
-        if (e.key === 'Backspace' && el.value === '' && arr[i-1]) arr[i-1].focus();
-      });
-    });
-  }
-
-  setupBehavior(rocInputs, syncRocToDob);
-  setupBehavior(dobInputs, syncDobToRoc);
-  baseDateInp.addEventListener('input', calculate);
-  paramSlider.addEventListener('input', () => {
-    paramDisp.textContent = paramSlider.value;
-    calculate();
-  });
-
-  function calculate() {
-    errorEl.textContent = "";
-    mainResCard.classList.remove('over-limit');
-
-    const y = parseInt(dobInputs.Y.value);
-    const m = parseInt(dobInputs.M.value);
-    const d = parseInt(dobInputs.D.value);
-    const baseVal = baseDateInp.value;
-    const threshold = parseInt(paramSlider.value);
-
-    if (!y || !m || !d || !baseVal || dobInputs.Y.value.length < 4) { reset(); return; }
+    if (!y || !m || !d || (y < 1000)) {
+        detailText.textContent = "請輸入完整日期進行試算";
+        return;
+    }
 
     const birth = new Date(y, m - 1, d);
-    const base = new Date(baseVal);
-
-    if (isNaN(birth.getTime()) || birth.getFullYear() !== y || birth.getMonth() !== m - 1 || birth.getDate() !== d) {
-      errorEl.textContent = "無效的生日日期"; reset(); return;
-    }
-    if (base < birth) {
-      errorEl.textContent = "基準日不可早於生日"; reset(); return;
+    const base = new Date(baseDateInp.value);
+    if (isNaN(birth.getTime()) || base < birth) {
+        detailText.textContent = "日期無效或基準日早於生日";
+        return;
     }
 
     let diffY = base.getFullYear() - birth.getFullYear();
     let diffM = base.getMonth() - birth.getMonth();
     let diffD = base.getDate() - birth.getDate();
-
-    if (diffD < 0) {
-      diffM--;
-      diffD += new Date(base.getFullYear(), base.getMonth(), 0).getDate();
+    if (diffD < 0) { 
+        diffM--; 
+        diffD += new Date(base.getFullYear(), base.getMonth(), 0).getDate(); 
     }
-    if (diffM < 0) {
-      diffY--;
-      diffM += 12;
+    if (diffM < 0) { 
+        diffY--; 
+        diffM += 12; 
     }
 
-    const insAge = diffM >= 6 ? diffY + 1 : diffY;
-    const customAge = diffM >= threshold ? diffY + 1 : diffY;
+    const ins = diffM >= 6 ? diffY + 1 : diffY;
+    const cus = diffM >= parseInt(slider.value) ? diffY + 1 : diffY;
 
-    // 更新介面
-    document.getElementById('insAge').innerHTML = `${insAge}<span class="unit-lg">歲</span>`;
+    document.getElementById('insAge').textContent = ins + " 歲";
     document.getElementById('actAge').textContent = diffY;
-    document.getElementById('customAge').textContent = customAge;
-    document.getElementById('remMonth').textContent = diffM;
-    document.getElementById('remDay').textContent = diffD;
-    document.getElementById('detailText').textContent = `實際年歲：${diffY}歲 ${diffM}個月 ${diffD}天`;
-
-    if (insAge > 80) mainResCard.classList.add('over-limit');
+    document.getElementById('customAge').textContent = cus;
+    
+    // 正確顯示實際年歲
+    detailText.textContent = `實際年歲：${diffY}歲 ${diffM}個月 ${diffD}天`;
+    
+    document.getElementById('ageMainCard').className = ins > 80 ? 'res-card alert' : 'res-card';
   }
 
-  function reset() {
-    document.getElementById('insAge').innerHTML = `--<span class="unit-lg">歲</span>`;
-    document.getElementById('actAge').textContent = "--";
-    document.getElementById('customAge').textContent = "--";
-    document.getElementById('remMonth').textContent = "--";
-    document.getElementById('remDay').textContent = "--";
-    document.getElementById('detailText').textContent = "請輸入完整日期";
+  // 民國連動到西元
+  function syncRocToDob() {
+    if(rocY.value) dobY.value = parseInt(rocY.value) + 1911;
+    dobM.value = rocM.value;
+    dobD.value = rocD.value;
+    calcAge();
   }
+
+  // 西元連動到民國
+  function syncDobToRoc() {
+    if(dobY.value) rocY.value = parseInt(dobY.value) - 1911;
+    rocM.value = dobM.value;
+    rocD.value = dobD.value;
+    calcAge();
+  }
+
+  [rocY, rocM, rocD].forEach((el, i, arr) => {
+    el.addEventListener('input', () => {
+      el.value = el.value.replace(/\D/g, '');
+      if (el.value.length >= el.maxLength && arr[i+1]) arr[i+1].focus();
+      syncRocToDob();
+    });
+  });
+
+  [dobY, dobM, dobD].forEach((el, i, arr) => {
+    el.addEventListener('input', () => {
+      el.value = el.value.replace(/\D/g, '');
+      if (el.value.length >= el.maxLength && arr[i+1]) arr[i+1].focus();
+      syncDobToRoc();
+    });
+  });
+
+  baseDateInp.addEventListener('input', calcAge);
+  slider.addEventListener('input', () => { 
+    document.getElementById('paramDisp').textContent = slider.value; 
+    calcAge(); 
+  });
+
+  // --- 體重邏輯 ---
+  const hInp = document.getElementById('height'), wInp = document.getElementById('weight');
+  function calcWeight() {
+    const h = parseFloat(hInp.value), w = parseFloat(wInp.value);
+    if (!h || h < 50) return;
+    const lower = Math.round((h - 105) * 0.75 * 10) / 10;
+    const upper = Math.round((h - 105) * 1.25 * 10) / 10;
+    document.getElementById('wLower').textContent = lower + " kg";
+    document.getElementById('wUpper').textContent = upper + " kg";
+    if (w) {
+      const isOut = w < lower || w > upper;
+      document.getElementById('weightResBox').className = isOut ? 'sub-box danger' : 'sub-box';
+      document.getElementById('weightRange').textContent = w + " kg " + (isOut ? "(超出範圍)" : "(正常)");
+    } else {
+      document.getElementById('weightRange').textContent = lower + " ~ " + upper + " kg";
+    }
+  }
+  hInp.addEventListener('input', calcWeight); wInp.addEventListener('input', calcWeight);
+
+  // --- 保費邏輯 ---
+  document.getElementById('preInp').addEventListener('input', function() {
+    const v = parseFloat(this.value);
+    if (!v) return;
+    const fmt = n => Math.round(n).toLocaleString();
+    document.getElementById('p1').textContent = fmt(v);
+    document.getElementById('t1').textContent = "總額 " + fmt(v);
+    document.getElementById('p2').textContent = fmt(v * 0.52);
+    document.getElementById('t2').textContent = "總額 " + fmt(v * 1.04);
+    document.getElementById('p3').textContent = fmt(v * 0.262);
+    document.getElementById('t3').textContent = "總額 " + fmt(v * 1.048);
+    document.getElementById('p4').textContent = fmt(v * 0.088);
+    document.getElementById('t4').textContent = "總額 " + fmt(v * 1.056);
+  });
 </script>
-
 </body>
 </html>
